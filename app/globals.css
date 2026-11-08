@@ -1,26 +1,39 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: radial-gradient(ellipse at top, #13234a 0%, #070b16 60%) fixed;
+  color: #e2e8f0;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium tracking-wide text-slate-400 uppercase;
+  }
+  .input {
+    @apply w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-slate-100 outline-none placeholder:text-slate-500 focus:border-sky-400;
+  }
+  .btn-primary {
+    @apply rounded-lg bg-sky-500 px-4 py-2 font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-secondary {
+    @apply rounded-lg bg-white/15 px-4 py-2 font-medium text-white transition hover:bg-white/25 disabled:opacity-40;
+  }
+  .btn-ghost {
+    @apply rounded-lg border border-white/15 px-3 py-2 text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* subtle head motion for the voice-over preview */
+@keyframes talk {
+  0%, 100% { transform: scale(1.02) translateY(0) rotate(0deg); }
+  50% { transform: scale(1.035) translateY(-0.4%) rotate(0.4deg); }
 }
