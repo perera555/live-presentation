@@ -21,15 +21,19 @@ export default function ZoomRoom({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // free the camera/mic so Zoom can use them
+    // free the camera/mic so Zoom can use them, and pause practice tools during the call
     window.dispatchEvent(new Event("lp-release-media"));
+    window.dispatchEvent(new CustomEvent("lp-call-state", { detail: true }));
     const onMsg = (e: MessageEvent) => {
       if (e.origin !== location.origin || e.data?.source !== "lp-zoom") return;
       if (e.data.type === "left") onEnd();
       if (e.data.type === "error") setError(String(e.data.detail || "Zoom error"));
     };
     window.addEventListener("message", onMsg);
-    return () => window.removeEventListener("message", onMsg);
+    return () => {
+      window.removeEventListener("message", onMsg);
+      window.dispatchEvent(new CustomEvent("lp-call-state", { detail: false }));
+    };
   }, [onEnd]);
 
   const src = `/zoom-meeting.html#${new URLSearchParams({ m: meetingId, p: passcode, n: name || "Guest" })}`;

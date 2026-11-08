@@ -28,6 +28,7 @@ import Recorder from "./Recorder";
 import InstallButton from "./InstallButton";
 import FaceVoiceCapture from "./FaceVoiceCapture";
 import CallsPanel from "./CallsPanel";
+import InterviewPractice from "./InterviewPractice";
 
 type Step = "form" | "edit" | "present" | "record";
 const STORE_KEY = "lp-state-v1";
@@ -358,7 +359,8 @@ export default function Studio() {
           </div>
           </div>
 
-          <aside className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
+          <aside className="space-y-6 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
+            <InterviewPractice />
             <CallsPanel title={title} />
           </aside>
         </section>
