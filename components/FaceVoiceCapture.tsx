@@ -38,15 +38,19 @@ type Phase = "ready" | "countdown" | "recording" | "processing" | "done";
 
 export default function FaceVoiceCapture({
   name,
+  readingText,
   onPhoto,
   onVoice,
   onClose,
 }: {
   name: string;
+  readingText?: string;
   onPhoto: (dataUrl: string) => void;
   onVoice: (v: ClonedVoice) => void;
   onClose: () => void;
 }) {
+  const fromPresentation = Boolean(readingText?.trim());
+  const text = fromPresentation ? readingText!.trim() : PASSAGE;
   const [phase, setPhase] = useState<Phase>("ready");
   const [count, setCount] = useState(3);
   const [seconds, setSeconds] = useState(0);
@@ -179,7 +183,10 @@ export default function FaceVoiceCapture({
             <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-300">
               <li>Put your face inside the oval, in good light.</li>
               <li>After a 3-second countdown, a <b>photo</b> is taken. Keep still, mouth closed.</li>
-              <li>Then read the text aloud for <b>45–80 seconds</b>. That becomes <b>your voice</b>.</li>
+              <li>
+                Then read {fromPresentation ? <b>your presentation</b> : "the text"} aloud for <b>45–80 seconds</b>.
+                That becomes <b>your voice</b>.
+              </li>
             </ol>
             <label className="flex items-start gap-2 text-xs text-slate-300">
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
@@ -200,7 +207,9 @@ export default function FaceVoiceCapture({
 
         {phase === "recording" && (
           <>
-            <p className="max-h-40 overflow-y-auto rounded bg-black/40 p-3 text-base leading-relaxed">{PASSAGE}</p>
+            <p className="max-h-[40vh] overflow-y-auto rounded-lg bg-black/40 p-4 text-xl leading-relaxed whitespace-pre-wrap sm:text-2xl">
+              {text}
+            </p>
             <div className="h-1.5 overflow-hidden rounded bg-white/10">
               <div className="h-full bg-red-400" style={{ width: `${(seconds / MAX_SAMPLE_SECONDS) * 100}%` }} />
             </div>

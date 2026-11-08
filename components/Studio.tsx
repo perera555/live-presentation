@@ -387,7 +387,8 @@ export default function Studio() {
               </div>
             </div>
             <PhotoAndVoice photo={photo} voice={voice} setVoice={(v) => { setVoice(v); setVideos([]); }} onPhoto={onPhoto}
-              clonedVoice={clonedVoice} setClonedVoice={changeClonedVoice} name={presenterName} />
+              clonedVoice={clonedVoice} setClonedVoice={changeClonedVoice} name={presenterName}
+              readingText={deck.slides.map((s) => s.script).join("\n\n")} />
           </div>
 
           <ChatPanel deck={deck} messages={chat} setMessages={setChat} onDeck={applyChatDeck} />
@@ -457,6 +458,7 @@ function PhotoAndVoice({
   clonedVoice,
   setClonedVoice,
   name,
+  readingText,
 }: {
   photo: string;
   voice: VoiceId;
@@ -465,6 +467,7 @@ function PhotoAndVoice({
   clonedVoice: ClonedVoice | null;
   setClonedVoice: (v: ClonedVoice | null) => void;
   name: string;
+  readingText?: string;
 }) {
   const [capture, setCapture] = useState(false);
   return (
@@ -476,6 +479,7 @@ function PhotoAndVoice({
       {capture && (
         <FaceVoiceCapture
           name={name}
+          readingText={readingText}
           onPhoto={async (dataUrl) => onPhoto(await dataUrlToFile(dataUrl, "camera.jpg"))}
           onVoice={setClonedVoice}
           onClose={() => setCapture(false)}
@@ -502,7 +506,7 @@ function PhotoAndVoice({
         Best results: face centred, looking at the camera, good light, neutral background, mouth closed.
       </p>
       <VoiceCloner cloned={clonedVoice} onCloned={setClonedVoice} onRemove={() => setClonedVoice(null)}
-        defaultName={name} />
+        defaultName={name} readingText={readingText} />
       <div className={clonedVoice ? "pointer-events-none opacity-40" : ""}>
         <span className="label">{clonedVoice ? "Ready-made voice (not used)" : "Or choose a ready-made voice"}</span>
         <div className="mb-2 grid grid-cols-2 gap-1 rounded-lg bg-black/30 p-1">

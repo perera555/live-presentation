@@ -12,12 +12,19 @@ export default function VoiceCloner({
   onCloned,
   onRemove,
   defaultName,
+  readingText,
 }: {
   cloned: ClonedVoice | null;
   onCloned: (v: ClonedVoice) => void;
   onRemove: () => void;
   defaultName: string;
+  /** The presenter's own presentation speech; read aloud to capture their voice. */
+  readingText?: string;
 }) {
+  const fromPresentation = Boolean(readingText?.trim());
+  const text = fromPresentation
+    ? readingText!.trim()
+    : READING_PASSAGE.replace("____", defaultName.trim() || "____");
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [sample, setSample] = useState<Blob | null>(null);
@@ -127,16 +134,45 @@ export default function VoiceCloner({
   const tooShort = seconds > 0 && seconds < 30 && !recording;
 
   return (
-    <details className="rounded-lg border border-white/10 bg-black/20 p-3 text-sm">
+    <details className="rounded-lg border border-white/10 bg-black/20 p-3 text-sm" open={fromPresentation || undefined}>
       <summary className="cursor-pointer font-medium text-sky-200">🎙 Use my own voice</summary>
       <div className="mt-3 space-y-3">
-        <p className="text-xs text-slate-400">
-          Read this aloud in a quiet room for <b>45–80 seconds</b> (read it twice if needed), speaking the way you
-          normally present:
+        <p className="text-sm text-slate-300">
+          {fromPresentation ? (
+            <>Read <b>your presentation</b> aloud for <b>45–80 seconds</b>, the way you&apos;d present it. Your voice is
+              captured while you practise.</>
+          ) : (
+            <>Read this aloud in a quiet room for <b>45–80 seconds</b>, speaking the way you normally present:</>
+          )}
         </p>
-        <p className="max-h-36 overflow-y-auto rounded bg-black/30 p-2 text-xs leading-relaxed text-slate-200">
-          {READING_PASSAGE}
-        </p>
+        <div className="max-h-56 overflow-y-auto rounded-lg bg-black/30 p-3 text-base leading-relaxed whitespace-pre-wrap text-slate-100">
+          {text}
+        </div>
+
+        {recording && (
+          <div className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
+              <span className="text-sm font-semibold text-slate-300">
+                {fromPresentation ? "Read your presentation aloud" : "Read this aloud"}
+              </span>
+              <span className="flex items-center gap-2 rounded-full bg-red-600 px-3 py-1 text-sm font-bold">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-white" /> {seconds}s / {MAX_SAMPLE_SECONDS}s
+              </span>
+            </div>
+            <div className="h-1 bg-white/10">
+              <div className="h-full bg-red-400 transition-all" style={{ width: `${(seconds / MAX_SAMPLE_SECONDS) * 100}%` }} />
+            </div>
+            <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-6 py-8 text-2xl leading-relaxed whitespace-pre-wrap text-white sm:text-3xl sm:leading-relaxed">
+              {text}
+            </div>
+            <div className="border-t border-white/10 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <button type="button" className="btn-primary mx-auto block w-full max-w-sm bg-none bg-red-500 py-3 text-lg hover:bg-red-400"
+                onClick={stop}>
+                {seconds < 30 ? `■ Stop (keep going: ${30 - seconds}s more is better)` : "■ Stop: I'm done"}
+              </button>
+            </div>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           {recording ? (
             <button type="button" className="btn-primary flex-1 bg-red-500 hover:bg-red-400" onClick={stop}>
