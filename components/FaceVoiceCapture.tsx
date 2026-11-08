@@ -157,13 +157,15 @@ export default function FaceVoiceCapture({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="card max-h-full w-full max-w-lg space-y-3 overflow-y-auto bg-slate-900">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">🎥 Quick setup: your face + your voice</h3>
-          <button className="btn-ghost px-2 py-1" onClick={onClose} disabled={phase === "recording"}>✕</button>
+      <div className="card max-h-full w-full max-w-4xl space-y-4 overflow-y-auto bg-slate-900">
+        <div className="relative text-center">
+          <h3 className="text-lg font-semibold">🎥 Quick setup: your face + your voice</h3>
+          <button className="btn-ghost absolute top-0 right-0 px-2 py-1" onClick={onClose} disabled={phase === "recording"}>✕</button>
         </div>
 
-        <div className="relative mx-auto aspect-[3/4] w-full max-w-64 overflow-hidden rounded-xl bg-black">
+        {/* camera on the left, instructions / reading text on the right; stacked on phones */}
+        <div className="grid items-start gap-5 sm:grid-cols-[minmax(0,280px)_1fr]">
+        <div className="relative mx-auto aspect-3/4 w-full max-w-64 overflow-hidden rounded-xl bg-black sm:max-w-none">
           <video ref={videoRef} autoPlay muted playsInline className="h-full w-full -scale-x-100 object-cover" />
           {/* face guide */}
           <div className="pointer-events-none absolute inset-[12%_18%_22%] rounded-[50%] border-2 border-dashed border-white/60" />
@@ -178,6 +180,7 @@ export default function FaceVoiceCapture({
           )}
         </div>
 
+        <div className="space-y-3">
         {phase === "ready" && (
           <>
             <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-300">
@@ -207,7 +210,7 @@ export default function FaceVoiceCapture({
 
         {phase === "recording" && (
           <>
-            <p className="max-h-[40vh] overflow-y-auto rounded-lg bg-black/40 p-4 text-xl leading-relaxed whitespace-pre-wrap sm:text-2xl">
+            <p className="max-h-[50vh] overflow-y-auto rounded-lg bg-black/40 p-4 text-center text-xl leading-relaxed whitespace-pre-wrap sm:text-2xl">
               {text}
             </p>
             <div className="h-1.5 overflow-hidden rounded bg-white/10">
@@ -234,6 +237,8 @@ export default function FaceVoiceCapture({
         )}
 
         {error && <p className="text-sm text-red-300">{error}</p>}
+        </div>
+        </div>
       </div>
     </div>
   );

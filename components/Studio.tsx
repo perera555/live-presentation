@@ -27,6 +27,7 @@ import ChatPanel, { type ChatMsg } from "./ChatPanel";
 import Recorder from "./Recorder";
 import InstallButton from "./InstallButton";
 import FaceVoiceCapture from "./FaceVoiceCapture";
+import CallsPanel from "./CallsPanel";
 
 type Step = "form" | "edit" | "present" | "record";
 const STORE_KEY = "lp-state-v1";
@@ -266,10 +267,10 @@ export default function Studio() {
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-12">
-      <header className="mb-8 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <header className="mb-8 flex flex-col items-center gap-4 text-center">
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:text-left">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon-192" alt="" className="h-11 w-11 rounded-xl shadow-lg shadow-indigo-500/30" />
+          <img src="/icon-192" alt="" className="h-12 w-12 rounded-xl shadow-lg shadow-indigo-500/30" />
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
               <span className="brand">Live Presentation</span> Studio
@@ -298,30 +299,18 @@ export default function Studio() {
       )}
 
       {step === "form" && (
-        <ol className="mb-6 grid gap-3 sm:grid-cols-3">
-          {[
-            ["✍️", "Describe it", "Title + what to cover"],
-            ["🎥", "Add you", "Short video, or a photo + your voice"],
-            ["🔴", "Go live", "Slides + talking video of you"],
-          ].map(([icon, t, d], k) => (
-            <li key={t} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400/25 to-fuchsia-400/25 text-lg">
-                {icon}
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold">
-                  <span className="text-slate-500">{k + 1}.</span> {t}
-                </p>
-                <p className="truncate text-xs text-slate-400">{d}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      )}
+        <section className="space-y-6">
+          {/* Top row: your voice (left) + your face and voice (right) */}
+          <div className="grid items-start gap-6 lg:grid-cols-2">
+            <VoiceCloner cloned={clonedVoice} onCloned={changeClonedVoice} onRemove={() => changeClonedVoice(null)}
+              defaultName={presenterName} readingText={promptReadingText(title, prompt, presenterName)} />
+            <PhotoAndVoice wide photo={photo} voice={voice} setVoice={setVoice} onPhoto={onPhoto}
+              clonedVoice={clonedVoice} setClonedVoice={changeClonedVoice} name={presenterName}
+              readingText={promptReadingText(title, prompt, presenterName)} />
+          </div>
 
-      {step === "form" && (
-        <section className="grid items-start gap-6 md:grid-cols-[1fr_300px]">
           <div className="card space-y-4">
+            <StepHeading n={2} title="Describe your presentation" />
             <label className="block">
               <span className="label">Presentation title *</span>
               <input className="input" value={title} onChange={(e) => setTitle(e.target.value)}
@@ -343,24 +332,30 @@ export default function Studio() {
                   onChange={(e) => setSlideCount(Number(e.target.value))} className="mt-3 w-full accent-sky-400" />
               </label>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
+          </div>
+
+          <div className="card space-y-3 text-center">
+            <StepHeading n={3} title="Go live" center />
+            <div className="mx-auto grid max-w-lg gap-2 sm:grid-cols-2">
               <button disabled={!title.trim() || !photo || !!busy} onClick={() => generateDeck(true)}
-                className="btn-primary" title={photo ? "" : "Upload your photo first"}>
-                🔴 Create & go live
+                className="btn-primary py-3 text-base" title={photo ? "" : "Upload your photo first"}>
+                🔴 Create &amp; go live
               </button>
-              <button disabled={!title.trim() || !!busy} onClick={() => generateDeck(false)} className="btn-secondary">
+              <button disabled={!title.trim() || !!busy} onClick={() => generateDeck(false)}
+                className="btn-secondary py-3 text-base">
                 Create &amp; edit first
               </button>
             </div>
-            <p className="text-xs text-slate-400">
-              <b>Create &amp; go live</b> writes the slides, makes your talking video and opens the live presentation
-              automatically. Upload your photo (and optionally record your voice) first.
+            <p className="mx-auto max-w-lg text-xs text-slate-400">
+              {!title.trim()
+                ? "Add a presentation title above to start."
+                : !photo
+                  ? "Add your photo (step 1, at the top) to create the talking video."
+                  : "Writes the slides, makes your talking video and opens the live presentation automatically."}
             </p>
           </div>
 
-          <PhotoAndVoice photo={photo} voice={voice} setVoice={setVoice} onPhoto={onPhoto}
-            clonedVoice={clonedVoice} setClonedVoice={changeClonedVoice} name={presenterName}
-            readingText={promptReadingText(title, prompt, presenterName)} />
+          <CallsPanel title={title} />
         </section>
       )}
 
@@ -401,7 +396,12 @@ export default function Studio() {
               readingText={deck.slides.map((s) => s.script).join("\n\n")} />
           </div>
 
+          <VoiceCloner cloned={clonedVoice} onCloned={changeClonedVoice} onRemove={() => changeClonedVoice(null)}
+            defaultName={presenterName} readingText={deck.slides.map((s) => s.script).join("\n\n")} />
+
           <ChatPanel deck={deck} messages={chat} setMessages={setChat} onDeck={applyChatDeck} />
+
+          <CallsPanel title={deck.title} />
 
           <ol className="space-y-4">
             {deck.slides.map((s, i) => {
@@ -469,6 +469,7 @@ function PhotoAndVoice({
   setClonedVoice,
   name,
   readingText,
+  wide = false,
 }: {
   photo: string;
   voice: VoiceId;
@@ -478,14 +479,19 @@ function PhotoAndVoice({
   setClonedVoice: (v: ClonedVoice | null) => void;
   name: string;
   readingText?: string;
+  /** Two-column layout for the centered home page. */
+  wide?: boolean;
 }) {
   const [capture, setCapture] = useState(false);
   return (
-    <aside className="card space-y-4">
-      <button type="button" className="btn-primary w-full" onClick={() => setCapture(true)}>
-        🎥 Quick setup: record a short video
-      </button>
-      <p className="-mt-2 text-center text-xs text-slate-400">Takes your photo and your voice in one go</p>
+    <aside className={`card ${wide ? "space-y-5" : "space-y-4"}`}>
+      {wide && <StepHeading n={1} title="Add your face and voice" />}
+      <div className={wide ? "mx-auto max-w-md" : ""}>
+        <button type="button" className="btn-primary w-full py-3" onClick={() => setCapture(true)}>
+          🎥 Quick setup: record a short video
+        </button>
+        <p className="mt-1.5 text-center text-xs text-slate-400">Takes your photo and your voice in one go</p>
+      </div>
       {capture && (
         <FaceVoiceCapture
           name={name}
@@ -495,8 +501,10 @@ function PhotoAndVoice({
           onClose={() => setCapture(false)}
         />
       )}
+      <div className={wide ? "grid items-start gap-6 border-t border-white/10 pt-5 sm:grid-cols-2" : "space-y-4"}>
+      <div className="space-y-3">
       <span className="label">Or add your photo</span>
-      <label className="relative mx-auto flex aspect-[4/5] w-full max-w-56 cursor-pointer md:max-w-none items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/20 bg-black/30 hover:border-sky-400">
+      <label className={`relative mx-auto flex aspect-4/5 w-full cursor-pointer ${wide ? "max-w-56" : "max-w-56 md:max-w-none"} items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/20 bg-black/30 hover:border-sky-400`}>
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={photo} alt="Presenter" className="h-full w-full object-cover" />
@@ -512,11 +520,10 @@ function PhotoAndVoice({
         <input type="file" accept="image/*" capture="user" className="sr-only"
           onChange={(e) => onPhoto(e.target.files?.[0])} />
       </label>
-      <p className="text-xs text-slate-400">
+      <p className="text-center text-xs text-slate-400">
         Best results: face centred, looking at the camera, good light, neutral background, mouth closed.
       </p>
-      <VoiceCloner cloned={clonedVoice} onCloned={setClonedVoice} onRemove={() => setClonedVoice(null)}
-        defaultName={name} readingText={readingText} />
+      </div>
       <div className={clonedVoice ? "pointer-events-none opacity-40" : ""}>
         <span className="label">{clonedVoice ? "Ready-made voice (not used)" : "Or choose a ready-made voice"}</span>
         <div className="mb-2 grid grid-cols-2 gap-1 rounded-lg bg-black/30 p-1">
@@ -536,7 +543,24 @@ function PhotoAndVoice({
             <option key={id} value={id}>{VOICES[id]}</option>
           ))}
         </select>
+        {wide && (
+          <p className="mt-3 text-xs text-slate-400">
+            Prefer your <b>own voice</b>? Record it in the &ldquo;Use my own voice&rdquo; section.
+          </p>
+        )}
+      </div>
       </div>
     </aside>
+  );
+}
+
+function StepHeading({ n, title, center = false }: { n: number; title: string; center?: boolean }) {
+  return (
+    <h2 className={`flex items-center gap-3 text-lg font-semibold ${center ? "justify-center" : ""}`}>
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-fuchsia-400 text-sm font-bold text-slate-950">
+        {n}
+      </span>
+      {title}
+    </h2>
   );
 }
