@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Deck, SlideVideo, VoiceId } from "@/lib/types";
 import { FEMALE_VOICES } from "@/lib/types";
+import { speakCloned } from "@/lib/audio";
 
 export default function Presenter({
   deck,
   videos,
   photo,
   voice,
+  clonedVoiceId,
   live,
   onExit,
 }: {
@@ -16,11 +18,13 @@ export default function Presenter({
   videos: SlideVideo[];
   photo: string;
   voice: VoiceId;
+  clonedVoiceId?: string;
   live: boolean;
   onExit: () => void;
 }) {
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [started, setStarted] = useState(!live);
   const [speaking, setSpeaking] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -49,7 +53,31 @@ export default function Presenter({
       v.play().catch(() => setPlaying(false));
       return;
     }
-    // Fallback: browser voice-over over the still photo.
+    // Voice-over over the still photo — in the presenter's own cloned voice if available.
+    if (clonedVoiceId) {
+      let audio: HTMLAudioElement | null = null;
+      let cancelled = false;
+      speakCloned(clonedVoiceId, slide.script)
+        .then((a) => {
+          if (cancelled) return;
+          audio = a;
+          a.onplay = () => setSpeaking(true);
+          a.onended = () => {
+            setSpeaking(false);
+            advance();
+          };
+          return a.play();
+        })
+        .catch(() => setPlaying(false));
+      return () => {
+        cancelled = true;
+        if (audio) {
+          audio.onended = null;
+          audio.pause();
+        }
+        setSpeaking(false);
+      };
+    }
     const u = new SpeechSynthesisUtterance(slide.script);
     const lang = voice.slice(0, 5);
     const female = FEMALE_VOICES.includes(voice);
@@ -68,7 +96,7 @@ export default function Presenter({
       speechSynthesis.cancel();
       setSpeaking(false);
     };
-  }, [i, playing, vid, live, slide.script, voice, advance]);
+  }, [i, playing, vid, live, slide.script, voice, clonedVoiceId, advance]);
 
   useEffect(() => () => speechSynthesis.cancel(), []);
 
@@ -125,6 +153,32 @@ export default function Presenter({
                 voice-over preview
               </span>
             )}
+          </div>
+        )}
+
+        {live && playing && (
+          <span className="absolute top-[2.5cqw] right-[4.7cqw] flex items-center gap-[0.6cqw] rounded-full bg-red-600 px-[1.2cqw] py-[0.3cqw] text-[1.3cqw] font-bold tracking-wider">
+            <span className="h-[0.8cqw] w-[0.8cqw] animate-pulse rounded-full bg-white" /> LIVE
+          </span>
+        )}
+
+        {!started && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-[2cqw] bg-black/70 backdrop-blur-sm">
+            <p className="text-[3cqw] font-semibold">{deck.title}</p>
+            <button
+              className="rounded-full bg-red-600 px-[4cqw] py-[1.5cqw] text-[2.2cqw] font-bold hover:bg-red-500"
+              onClick={() => {
+                setStarted(true);
+                rootRef.current?.requestFullscreen?.()?.catch(() => {});
+                setI(0);
+                setPlaying(true);
+              }}
+            >
+              ● Start live presentation
+            </button>
+            <p className="text-[1.4cqw] text-slate-400">
+              Goes fullscreen and plays every slide automatically · Space = pause · ←/→ = change slide · Esc = exit
+            </p>
           </div>
         )}
 

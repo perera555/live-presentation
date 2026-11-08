@@ -1,0 +1,35 @@
+{
+  "name": "live-presentation-desktop",
+  "productName": "Live Presentation Studio",
+  "version": "1.0.0",
+  "description": "Desktop app for Live Presentation Studio",
+  "author": "Dhanushka",
+  "main": "main.js",
+  "appUrl": "https://live-presentation-studio-perera.vercel.app",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.perera555.livepresentation",
+    "productName": "Live Presentation Studio",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "package.json"],
+    "win": { "target": ["nsis"], "icon": "build/icon.png" },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "icon": "build/icon.png",
+      "category": "public.app-category.education",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Record your voice so presentations can be spoken in your own voice.",
+        "NSCameraUsageDescription": "Take a photo of yourself to use as the presenter."
+      }
+    }
+  }
+}

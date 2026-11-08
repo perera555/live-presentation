@@ -13,6 +13,8 @@ import {
   safeName,
 } from "@/lib/export";
 import Presenter from "./Presenter";
+import VoiceCloner, { type ClonedVoice } from "./VoiceCloner";
+import ChatPanel, { type ChatMsg } from "./ChatPanel";
 
 type Step = "form" | "edit" | "present";
 const STORE_KEY = "lp-state-v1";
@@ -30,7 +32,10 @@ export default function Studio() {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [liveMode, setLiveMode] = useState(true);
+  const [clonedVoice, setClonedVoice] = useState<ClonedVoice | null>(null);
+  const [chat, setChat] = useState<ChatMsg[]>([]);
   const photoUrlRef = useRef<string>("");
+  const goLiveWhenReady = useRef(false);
 
   // restore last session
   useEffect(() => {
@@ -49,6 +54,7 @@ export default function Studio() {
       setPresenterName(s.presenterName ?? "");
       if (s.voice in VOICES) setVoice(s.voice);
       if (s.photo) setPhoto(s.photo);
+      if (s.clonedVoice?.id) setClonedVoice(s.clonedVoice);
       /* eslint-enable react-hooks/set-state-in-effect */
     } catch {}
   }, []);
@@ -57,10 +63,15 @@ export default function Studio() {
     try {
       localStorage.setItem(
         STORE_KEY,
-        JSON.stringify({ title, prompt, presenterName, voice, photo, deck, videos }),
+        JSON.stringify({ title, prompt, presenterName, voice, photo, deck, videos, clonedVoice }),
       );
     } catch {}
-  }, [title, prompt, presenterName, voice, photo, deck, videos]);
+  }, [title, prompt, presenterName, voice, photo, deck, videos, clonedVoice]);
+
+  function changeClonedVoice(v: ClonedVoice | null) {
+    setClonedVoice(v);
+    setVideos([]); // existing videos were spoken in the old voice
+  }
 
   async function onPhoto(file?: File) {
     if (!file) return;
@@ -70,9 +81,10 @@ export default function Studio() {
     setVideos([]);
   }
 
-  async function generateDeck() {
+  async function generateDeck(goLive = false) {
     setError("");
     setBusy("Writing your slides and speech…");
+    let made: Deck | null = null;
     try {
       const res = await fetch("/api/slides", {
         method: "POST",
@@ -81,14 +93,28 @@ export default function Studio() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate slides");
-      setDeck(data);
+      made = data as Deck;
+      setDeck(made);
       setVideos([]);
+      setChat([]);
       setStep("edit");
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setBusy("");
     }
+    if (made && goLive) await generateVideos(undefined, made, []);
+  }
+
+  /** Applies a deck from the AI chat; slides whose speech changed need a new video. */
+  function applyChatDeck(next: Deck) {
+    const prev = deck;
+    setDeck(next);
+    setVideos((v) =>
+      next.slides.map((s, i) =>
+        prev?.slides[i]?.script === s.script && v[i] ? v[i] : { status: "idle" },
+      ),
+    );
   }
 
   function updateSlide(i: number, patch: Partial<Deck["slides"][number]>) {
@@ -116,7 +142,7 @@ export default function Studio() {
     return data.url as string;
   }
 
-  async function renderSlideVideo(i: number, sourceUrl: string) {
+  async function renderSlideVideo(i: number, sourceUrl: string, d: Deck) {
     const set = (v: SlideVideo) => setVideos((all) => {
       const next = [...all];
       next[i] = v;
@@ -127,7 +153,12 @@ export default function Studio() {
       const res = await fetch("/api/avatar/talk", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sourceUrl, text: deck!.slides[i].script, voice }),
+        body: JSON.stringify({
+          sourceUrl,
+          text: d.slides[i].script,
+          voice,
+          clonedVoiceId: clonedVoice?.id,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Video request failed");
@@ -144,20 +175,21 @@ export default function Studio() {
     }
   }
 
-  async function generateVideos(only?: number) {
-    if (!deck || !photo) return setError("Upload your photo first.");
+  async function generateVideos(only?: number, d: Deck | null = deck, current: SlideVideo[] = videos) {
+    if (!d || !photo) return setError("Upload your photo first.");
     setError("");
     setBusy("Creating your talking presenter video…");
+    goLiveWhenReady.current = only === undefined;
     try {
       const src = await ensurePhotoUploaded();
       const todo = only !== undefined
         ? [only]
-        : deck.slides.map((_, i) => i).filter((i) => videos[i]?.status !== "done");
+        : d.slides.map((_, i) => i).filter((i) => current[i]?.status !== "done");
       // render up to 3 slides at a time
       const queue = [...todo];
       await Promise.all(
         Array.from({ length: Math.min(3, queue.length) }, async () => {
-          while (queue.length) await renderSlideVideo(queue.shift()!, src);
+          while (queue.length) await renderSlideVideo(queue.shift()!, src, d);
         }),
       );
     } catch (e) {
@@ -185,11 +217,22 @@ export default function Studio() {
   function reset() {
     setDeck(null);
     setVideos([]);
+    setChat([]);
     setStep("form");
   }
 
   const allDone = deck && deck.slides.every((_, i) => videos[i]?.status === "done");
   const anyWorking = videos.some((v) => v?.status === "working");
+
+  // When the whole set of videos finishes rendering, go straight to the live presentation.
+  useEffect(() => {
+    if (allDone && goLiveWhenReady.current) {
+      goLiveWhenReady.current = false;
+      /* eslint-disable-next-line react-hooks/set-state-in-effect */
+      setLiveMode(true);
+      setStep("present");
+    }
+  }, [allDone]);
 
   if (step === "present" && deck) {
     return (
@@ -198,6 +241,7 @@ export default function Studio() {
         videos={videos}
         photo={photo}
         voice={voice}
+        clonedVoiceId={clonedVoice?.id}
         live={liveMode}
         onExit={() => setStep("edit")}
       />
@@ -254,12 +298,23 @@ export default function Studio() {
                   onChange={(e) => setSlideCount(Number(e.target.value))} className="mt-3 w-full accent-sky-400" />
               </label>
             </div>
-            <button disabled={!title.trim() || !!busy} onClick={generateDeck} className="btn-primary w-full">
-              Create presentation
-            </button>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button disabled={!title.trim() || !photo || !!busy} onClick={() => generateDeck(true)}
+                className="btn-primary" title={photo ? "" : "Upload your photo first"}>
+                🔴 Create & go live
+              </button>
+              <button disabled={!title.trim() || !!busy} onClick={() => generateDeck(false)} className="btn-secondary">
+                Create &amp; edit first
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">
+              <b>Create &amp; go live</b> writes the slides, makes your talking video and opens the live presentation
+              automatically. Upload your photo (and optionally record your voice) first.
+            </p>
           </div>
 
-          <PhotoAndVoice photo={photo} voice={voice} setVoice={setVoice} onPhoto={onPhoto} />
+          <PhotoAndVoice photo={photo} voice={voice} setVoice={setVoice} onPhoto={onPhoto}
+            clonedVoice={clonedVoice} setClonedVoice={changeClonedVoice} name={presenterName} />
         </section>
       )}
 
@@ -273,10 +328,10 @@ export default function Studio() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => generateVideos()} disabled={!photo || !!busy || anyWorking} className="btn-primary">
-                  {allDone ? "All videos ready ✓" : "Generate talking video"}
+                  {allDone ? "All videos ready ✓" : "Generate video & go live"}
                 </button>
                 <button onClick={() => { setLiveMode(true); setStep("present"); }} className="btn-secondary">
-                  ▶ Present (live video)
+                  🔴 Live presentation
                 </button>
                 <button onClick={() => { setLiveMode(false); setStep("present"); }} className="btn-secondary">
                   Slides only
@@ -292,8 +347,11 @@ export default function Studio() {
                 </button>
               </div>
             </div>
-            <PhotoAndVoice photo={photo} voice={voice} setVoice={(v) => { setVoice(v); setVideos([]); }} onPhoto={onPhoto} />
+            <PhotoAndVoice photo={photo} voice={voice} setVoice={(v) => { setVoice(v); setVideos([]); }} onPhoto={onPhoto}
+              clonedVoice={clonedVoice} setClonedVoice={changeClonedVoice} name={presenterName} />
           </div>
+
+          <ChatPanel deck={deck} messages={chat} setMessages={setChat} onDeck={applyChatDeck} />
 
           <ol className="space-y-4">
             {deck.slides.map((s, i) => {
@@ -357,11 +415,17 @@ function PhotoAndVoice({
   voice,
   setVoice,
   onPhoto,
+  clonedVoice,
+  setClonedVoice,
+  name,
 }: {
   photo: string;
   voice: VoiceId;
   setVoice: (v: VoiceId) => void;
   onPhoto: (f?: File) => void;
+  clonedVoice: ClonedVoice | null;
+  setClonedVoice: (v: ClonedVoice | null) => void;
+  name: string;
 }) {
   return (
     <aside className="card space-y-4">
@@ -380,8 +444,10 @@ function PhotoAndVoice({
       <p className="text-xs text-slate-400">
         Best results: face centred, looking at the camera, good light, neutral background, mouth closed.
       </p>
-      <div>
-        <span className="label">Voice</span>
+      <VoiceCloner cloned={clonedVoice} onCloned={setClonedVoice} onRemove={() => setClonedVoice(null)}
+        defaultName={name} />
+      <div className={clonedVoice ? "pointer-events-none opacity-40" : ""}>
+        <span className="label">{clonedVoice ? "Ready-made voice (not used)" : "Or choose a ready-made voice"}</span>
         <div className="mb-2 grid grid-cols-2 gap-1 rounded-lg bg-black/30 p-1">
           {([["Female", FEMALE_VOICES], ["Male", MALE_VOICES]] as const).map(([label, list]) => {
             const active = list.includes(voice);
