@@ -17,6 +17,7 @@ import VoiceCloner, { type ClonedVoice } from "./VoiceCloner";
 import ChatPanel, { type ChatMsg } from "./ChatPanel";
 import Recorder from "./Recorder";
 import InstallButton from "./InstallButton";
+import FaceVoiceCapture from "./FaceVoiceCapture";
 
 type Step = "form" | "edit" | "present" | "record";
 const STORE_KEY = "lp-state-v1";
@@ -439,9 +440,22 @@ function PhotoAndVoice({
   setClonedVoice: (v: ClonedVoice | null) => void;
   name: string;
 }) {
+  const [capture, setCapture] = useState(false);
   return (
     <aside className="card space-y-4">
-      <span className="label">Your photo</span>
+      <button type="button" className="btn-primary w-full" onClick={() => setCapture(true)}>
+        🎥 Quick setup: record a short video
+      </button>
+      <p className="-mt-2 text-center text-xs text-slate-400">Takes your photo and your voice in one go</p>
+      {capture && (
+        <FaceVoiceCapture
+          name={name}
+          onPhoto={async (dataUrl) => onPhoto(await dataUrlToFile(dataUrl, "camera.jpg"))}
+          onVoice={setClonedVoice}
+          onClose={() => setCapture(false)}
+        />
+      )}
+      <span className="label">Or add your photo</span>
       <label className="relative mx-auto flex aspect-[4/5] w-full max-w-56 cursor-pointer md:max-w-none items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/20 bg-black/30 hover:border-sky-400">
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
