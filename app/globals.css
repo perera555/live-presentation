@@ -6,29 +6,53 @@
 }
 
 body {
-  background: radial-gradient(ellipse at top, #13234a 0%, #070b16 60%) fixed;
+  background: #060914;
   color: #e2e8f0;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+/* soft animated aurora behind the app */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  background:
+    radial-gradient(40% 35% at 15% 10%, rgba(56, 189, 248, 0.22), transparent 70%),
+    radial-gradient(35% 30% at 85% 15%, rgba(168, 85, 247, 0.22), transparent 70%),
+    radial-gradient(45% 40% at 50% 100%, rgba(236, 72, 153, 0.12), transparent 70%);
+  filter: blur(20px);
+  animation: aurora 18s ease-in-out infinite alternate;
+}
+@keyframes aurora {
+  to { transform: translate3d(3%, -2%, 0) rotate(4deg) scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+}
+
 @layer components {
   .card {
-    @apply rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur;
+    @apply rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] backdrop-blur-xl;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   }
   .label {
-    @apply mb-1 block text-xs font-medium tracking-wide text-slate-400 uppercase;
+    @apply mb-1.5 block text-[11px] font-semibold tracking-[0.12em] text-slate-400 uppercase;
   }
   .input {
-    @apply w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-slate-100 outline-none placeholder:text-slate-500 focus:border-sky-400;
+    @apply w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-slate-100 transition outline-none placeholder:text-slate-500 focus:border-sky-400/70 focus:ring-4 focus:ring-sky-400/15;
   }
   .btn-primary {
-    @apply rounded-lg bg-sky-500 px-4 py-2 font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply rounded-xl bg-gradient-to-r from-sky-400 via-indigo-400 to-fuchsia-400 px-4 py-2.5 font-semibold text-slate-950 shadow-[0_8px_30px_-6px_rgba(129,140,248,0.55)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none;
   }
   .btn-secondary {
-    @apply rounded-lg bg-white/15 px-4 py-2 font-medium text-white transition hover:bg-white/25 disabled:opacity-40;
+    @apply rounded-xl border border-white/10 bg-white/10 px-4 py-2.5 font-medium text-white transition hover:bg-white/20 active:scale-[0.98] disabled:opacity-40;
   }
   .btn-ghost {
-    @apply rounded-lg border border-white/15 px-3 py-2 text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply rounded-xl border border-white/15 px-3 py-2 text-slate-200 transition hover:border-white/30 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .brand {
+    @apply bg-gradient-to-r from-sky-300 via-indigo-300 to-fuchsia-300 bg-clip-text text-transparent;
   }
 }
 

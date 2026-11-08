@@ -258,11 +258,15 @@ export default function Studio() {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-12">
       <header className="mb-8 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">Live Presentation Studio</h1>
-          <p className="text-sm text-slate-400">
-            Title + prompt + your photo → slides, speech, and a talking video of you.
-          </p>
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon-192" alt="" className="h-11 w-11 rounded-xl shadow-lg shadow-indigo-500/30" />
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+              <span className="brand">Live Presentation</span> Studio
+            </h1>
+            <p className="text-sm text-slate-400">Your topic, your face, your voice: presented for you.</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {step === "edit" && (
@@ -285,7 +289,29 @@ export default function Studio() {
       )}
 
       {step === "form" && (
-        <section className="grid gap-6 md:grid-cols-[1fr_280px]">
+        <ol className="mb-6 grid gap-3 sm:grid-cols-3">
+          {[
+            ["✍️", "Describe it", "Title + what to cover"],
+            ["🎥", "Add you", "Short video, or a photo + your voice"],
+            ["🔴", "Go live", "Slides + talking video of you"],
+          ].map(([icon, t, d], k) => (
+            <li key={t} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400/25 to-fuchsia-400/25 text-lg">
+                {icon}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">
+                  <span className="text-slate-500">{k + 1}.</span> {t}
+                </p>
+                <p className="truncate text-xs text-slate-400">{d}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {step === "form" && (
+        <section className="grid items-start gap-6 md:grid-cols-[1fr_300px]">
           <div className="card space-y-4">
             <label className="block">
               <span className="label">Presentation title *</span>
