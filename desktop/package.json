@@ -1,7 +1,7 @@
 {
   "name": "live-presentation-desktop",
   "productName": "Live Presentation Studio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Desktop app for Live Presentation Studio",
   "author": "Dhanushka",
   "main": "main.js",
