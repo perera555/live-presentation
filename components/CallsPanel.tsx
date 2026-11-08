@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ContactBar from "./ContactBar";
 import DeviceCheck from "./DeviceCheck";
 import ZoomRoom from "./ZoomRoom";
@@ -49,6 +49,29 @@ export default function CallsPanel({ title }: { title?: string }) {
   const [passcode, setPasscode] = useState("");
   const [phone, setPhone] = useState("");
   const [yourName, setYourName] = useState("");
+  const [pickedName, setPickedName] = useState("");
+  const [canPickContact, setCanPickContact] = useState(false);
+  useEffect(() => {
+    // Contact Picker API: available in Chrome on Android
+    /* eslint-disable-next-line react-hooks/set-state-in-effect */
+    setCanPickContact("contacts" in navigator && "ContactsManager" in window);
+  }, []);
+
+  /** Opens the phone's own contact picker; only the chosen contact is shared with the app. */
+  async function pickContact() {
+    try {
+      const nav = navigator as Navigator & {
+        contacts: { select: (props: string[], opts?: { multiple?: boolean }) => Promise<{ name?: string[]; tel?: string[] }[]> };
+      };
+      const [c] = await nav.contacts.select(["name", "tel"], { multiple: false });
+      if (c?.tel?.[0]) {
+        setPhone(c.tel[0]);
+        setPickedName(c.name?.[0] ?? "");
+      }
+    } catch {
+      /* cancelled */
+    }
+  }
   const [inCall, setInCall] = useState(false);
   const endCall = useCallback(() => setInCall(false), []);
   const meetingDigits = (meeting.match(/\/j\/(\d+)/)?.[1] ?? meeting).replace(/\D/g, "");
@@ -126,10 +149,16 @@ export default function CallsPanel({ title }: { title?: string }) {
               <li>Click <b>Open my WhatsApp</b>. A QR code appears.</li>
               <li>On your phone: WhatsApp → <b>Settings</b> (or ⋮) → <b>Linked devices</b> → <b>Link a device</b>.</li>
               <li>Scan the QR code. Your chats appear here. In the desktop app you stay signed in.</li>
+              <li>Your <b>contact list</b>: tap 💬 <b>New chat</b> in that WhatsApp window.</li>
             </ol>
           </details>
           <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)}
             placeholder="Phone with country code, e.g. +94 77 123 4567" inputMode="tel" />
+          {canPickContact && (
+            <button type="button" className="btn-ghost w-full text-sm" onClick={pickContact}>
+              👤 Choose from my contacts{pickedName ? `: ${pickedName}` : ""}
+            </button>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <button type="button" className="btn-ghost text-sm"
               disabled={waNumber.length < 8} onClick={() => openWindow(waUrl, "whatsapp")}>
