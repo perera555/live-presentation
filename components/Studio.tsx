@@ -359,7 +359,7 @@ export default function Studio() {
           </div>
           </div>
 
-          <aside className="space-y-6 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
+          <aside className="space-y-6">
             <InterviewPractice />
             <CallsPanel title={title} />
           </aside>
