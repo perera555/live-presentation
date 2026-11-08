@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Call ended</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b1020; color: #e2e8f0; font-family: system-ui, sans-serif; display: grid; place-items: center; }
+  </style>
+</head>
+<body>
+  <p>You left the call.</p>
+  <script>
+    try { parent.postMessage({ source: "lp-zoom", type: "left" }, location.origin); } catch (e) {}
+  </script>
+</body>
+</html>

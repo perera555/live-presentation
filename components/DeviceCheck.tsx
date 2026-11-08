@@ -74,6 +74,16 @@ export default function DeviceCheck() {
 
   useEffect(() => stopAll, [stopAll]);
 
+  // A call inside the app (Zoom) needs the camera: release it when asked.
+  useEffect(() => {
+    const release = () => {
+      stopAll();
+      setOn(false);
+    };
+    window.addEventListener("lp-release-media", release);
+    return () => window.removeEventListener("lp-release-media", release);
+  }, [stopAll]);
+
   // Automatically detect cameras/mics; start straight away if access was already allowed.
   const [found, setFound] = useState<{ cams: number; mics: number } | null>(null);
   useEffect(() => {
@@ -160,7 +170,7 @@ export default function DeviceCheck() {
         )}
       </div>
 
-      <div className="grid items-start gap-4 md:grid-cols-[1fr_260px]">
+      <div className="grid items-start gap-4">
         <div className="relative aspect-video overflow-hidden rounded-xl bg-black">
           {testUrl ? (
             <video src={testUrl} controls playsInline className="h-full w-full object-contain" />

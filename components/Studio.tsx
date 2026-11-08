@@ -266,7 +266,7 @@ export default function Studio() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-12">
+    <main className={`mx-auto w-full px-4 py-8 sm:py-12 ${step === "form" ? "max-w-7xl" : "max-w-5xl"}`}>
       <header className="mb-8 flex flex-col items-center gap-4 text-center">
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:text-left">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -299,7 +299,9 @@ export default function Studio() {
       )}
 
       {step === "form" && (
-        <section className="space-y-6">
+        <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+          {/* Left: create the presentation · Right: calls & interviews */}
+          <div className="space-y-6">
           {/* Top row: your voice (left) + your face and voice (right) */}
           <div className="grid items-start gap-6 lg:grid-cols-2">
             <VoiceCloner cloned={clonedVoice} onCloned={changeClonedVoice} onRemove={() => changeClonedVoice(null)}
@@ -354,8 +356,11 @@ export default function Studio() {
                   : "Writes the slides, makes your talking video and opens the live presentation automatically."}
             </p>
           </div>
+          </div>
 
-          <CallsPanel title={title} />
+          <aside className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
+            <CallsPanel title={title} />
+          </aside>
         </section>
       )}
 
@@ -501,7 +506,7 @@ function PhotoAndVoice({
           onClose={() => setCapture(false)}
         />
       )}
-      <div className={wide ? "grid items-start gap-6 border-t border-white/10 pt-5 sm:grid-cols-2" : "space-y-4"}>
+      <div className={wide ? "grid items-start gap-6 border-t border-white/10 pt-5 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2" : "space-y-4"}>
       <div className="space-y-3">
       <span className="label">Or add your photo</span>
       <label className={`relative mx-auto flex aspect-4/5 w-full cursor-pointer ${wide ? "max-w-56" : "max-w-56 md:max-w-none"} items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/20 bg-black/30 hover:border-sky-400`}>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zoom meeting</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #1a1a1a; color: #e2e8f0; font-family: system-ui, sans-serif; }
+    #status { position: fixed; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; z-index: 0; }
+    #status p { max-width: 420px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div id="status"><p>Connecting to Zoom…<br /><small>Allow your camera and microphone when asked.</small></p></div>
+
+  <!-- Zoom Meeting SDK (Client View) from Zoom's CDN. Runs in this separate page so it can use its own React 18. -->
+  <script src="https://source.zoom.us/6.10.0/lib/vendor/react.min.js"></script>
+  <script src="https://source.zoom.us/6.10.0/lib/vendor/react-dom.min.js"></script>
+  <script src="https://source.zoom.us/6.10.0/lib/vendor/redux.min.js"></script>
+  <script src="https://source.zoom.us/6.10.0/lib/vendor/redux-thunk.min.js"></script>
+  <script src="https://source.zoom.us/6.10.0/lib/vendor/lodash.min.js"></script>
+  <script src="https://source.zoom.us/zoom-meeting-6.10.0.min.js"></script>
+  <script>
+    (function () {
+      var statusEl = document.getElementById("status");
+      function show(msg) { statusEl.innerHTML = "<p>" + msg + "</p>"; }
+      function tellParent(type, detail) {
+        try { parent.postMessage({ source: "lp-zoom", type: type, detail: detail || "" }, location.origin); } catch (e) {}
+      }
+
+      var params = new URLSearchParams(location.hash.slice(1));
+      var meetingNumber = (params.get("m") || "").replace(/\D/g, "");
+      var passWord = params.get("p") || "";
+      var userName = params.get("n") || "Guest";
+      if (!meetingNumber) { show("No meeting ID given."); return; }
+
+      fetch("/api/zoom/signature", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ meetingNumber: meetingNumber }),
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { show(res.d.error || "Could not start Zoom."); tellParent("error", res.d.error); return; }
+          ZoomMtg.preLoadWasm();
+          ZoomMtg.prepareWebSDK();
+          ZoomMtg.init({
+            leaveUrl: location.origin + "/zoom-left.html",
+            patchJsMedia: true,
+            leaveOnPageUnload: true,
+            success: function () {
+              ZoomMtg.join({
+                signature: res.d.signature,
+                meetingNumber: meetingNumber,
+                passWord: passWord,
+                userName: userName,
+                success: function () { tellParent("joined"); },
+                error: function (err) {
+                  var msg = (err && (err.errorMessage || err.reason)) || "Could not join the meeting.";
+                  show(msg); tellParent("error", msg);
+                },
+              });
+            },
+            error: function (err) {
+              var msg = (err && (err.errorMessage || err.reason)) || "Zoom could not start.";
+              show(msg); tellParent("error", msg);
+            },
+          });
+        })
+        .catch(function () { show("Network error: check your internet connection."); });
+    })();
+  </script>
+</body>
+</html>

@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import ContactBar from "./ContactBar";
 import DeviceCheck from "./DeviceCheck";
+import ZoomRoom from "./ZoomRoom";
+
+/** Passcode typed in, or taken from a pasted invite link (?pwd=…). */
+function passcodeFor(input: string, passcode: string) {
+  return passcode.trim() || input.match(/[?&]pwd=([^&]+)/)?.[1] || "";
+}
 
 function zoomUrl(input: string, passcode: string) {
   const v = input.trim();
@@ -42,6 +48,10 @@ export default function CallsPanel({ title }: { title?: string }) {
   const [meeting, setMeeting] = useState("");
   const [passcode, setPasscode] = useState("");
   const [phone, setPhone] = useState("");
+  const [yourName, setYourName] = useState("");
+  const [inCall, setInCall] = useState(false);
+  const endCall = useCallback(() => setInCall(false), []);
+  const meetingDigits = (meeting.match(/\/j\/(\d+)/)?.[1] ?? meeting).replace(/\D/g, "");
   const appUrl = typeof window !== "undefined" ? window.location.origin : "";
   const message = title?.trim()
     ? `Hi! Here is my presentation "${title.trim()}".`
@@ -67,7 +77,7 @@ export default function CallsPanel({ title }: { title?: string }) {
         <DeviceCheck />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4">
         {/* Zoom */}
         <div className="space-y-3 rounded-2xl border border-[#2D8CFF]/40 bg-[#2D8CFF]/10 p-4">
           <div className="flex items-center gap-2">
@@ -78,22 +88,26 @@ export default function CallsPanel({ title }: { title?: string }) {
             placeholder="Meeting link or ID, e.g. 845 1234 5678" inputMode="text" />
           <input className="input" value={passcode} onChange={(e) => setPasscode(e.target.value)}
             placeholder="Passcode (if any)" />
-          <button type="button" className="w-full rounded-xl bg-[#2D8CFF] px-3 py-2.5 font-semibold text-white transition hover:brightness-110 disabled:opacity-40"
-            disabled={!zoomWebUrl(meeting, passcode)} onClick={() => openWindow(zoomWebUrl(meeting, passcode), "zoom")}>
-            Join here (in a window)
-          </button>
+          <input className="input" value={yourName} onChange={(e) => setYourName(e.target.value)}
+            placeholder="Your name (shown in the meeting)" />
+          {inCall ? (
+            <ZoomRoom meetingId={meetingDigits} passcode={passcodeFor(meeting, passcode)} name={yourName}
+              onEnd={endCall} />
+          ) : (
+            <button type="button" className="w-full rounded-xl bg-[#2D8CFF] px-3 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-40"
+              disabled={meetingDigits.length < 9} onClick={() => setInCall(true)}>
+              🎥 Join inside this app
+            </button>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <button type="button" className="btn-ghost text-sm" disabled={!joinUrl} onClick={() => open(joinUrl)}>
               Open in Zoom app
             </button>
-            <button type="button" className="btn-ghost text-sm" onClick={() => openWindow("https://app.zoom.us/wc", "zoom")}>
-              Zoom home
+            <button type="button" className="btn-ghost text-sm" disabled={!zoomWebUrl(meeting, passcode)}
+              onClick={() => openWindow(zoomWebUrl(meeting, passcode), "zoom")}>
+              Separate window
             </button>
           </div>
-          <p className="text-xs text-slate-400">
-            &ldquo;Join here&rdquo; uses Zoom in a window next to this app: no install needed. Sign in to your Zoom
-            account there to host meetings.
-          </p>
         </div>
 
         {/* WhatsApp */}
