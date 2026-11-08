@@ -5,7 +5,7 @@ import { MAX_SAMPLE_SECONDS, speakCloned, toWav } from "@/lib/audio";
 
 export type ClonedVoice = { id: string; name: string };
 
-const READING_PASSAGE = `Good morning everyone, and thank you for being here today. My name is ____, and I'm going to talk about a topic I find really interesting. Over the next few minutes, I'll explain the key ideas, share a few examples, and finish with what I think it means for the future. Some of these points might surprise you, so please feel free to ask questions at the end. Let's begin with a quick look at the background, and then we'll move on to the main findings.`;
+export const READING_PASSAGE =`Good morning everyone, and thank you for being here today. My name is ____, and I'm going to talk about a topic I find really interesting. Over the next few minutes, I'll explain the key ideas, share a few examples, and finish with what I think it means for the future. Some of these points might surprise you, so please feel free to ask questions at the end. Let's begin with a quick look at the background, and then we'll move on to the main findings.`;
 
 export default function VoiceCloner({
   cloned,

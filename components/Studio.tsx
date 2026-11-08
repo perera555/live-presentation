@@ -13,7 +13,16 @@ import {
   safeName,
 } from "@/lib/export";
 import Presenter from "./Presenter";
-import VoiceCloner, { type ClonedVoice } from "./VoiceCloner";
+import VoiceCloner, { READING_PASSAGE, type ClonedVoice } from "./VoiceCloner";
+
+/** Text to read for the voice sample before slides exist: the user's own title + prompt,
+ *  topped up with a general passage so there is ~45s+ of speech. */
+function promptReadingText(title: string, prompt: string, name: string) {
+  const typed = [title.trim(), prompt.trim()].filter(Boolean).join(".\n\n");
+  if (!typed) return undefined;
+  const words = typed.split(/\s+/).length;
+  return words >= 110 ? typed : `${typed}\n\n${READING_PASSAGE.replace("____", name.trim() || "____")}`;
+}
 import ChatPanel, { type ChatMsg } from "./ChatPanel";
 import Recorder from "./Recorder";
 import InstallButton from "./InstallButton";
@@ -350,7 +359,8 @@ export default function Studio() {
           </div>
 
           <PhotoAndVoice photo={photo} voice={voice} setVoice={setVoice} onPhoto={onPhoto}
-            clonedVoice={clonedVoice} setClonedVoice={changeClonedVoice} name={presenterName} />
+            clonedVoice={clonedVoice} setClonedVoice={changeClonedVoice} name={presenterName}
+            readingText={promptReadingText(title, prompt, presenterName)} />
         </section>
       )}
 
