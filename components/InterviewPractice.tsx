@@ -36,6 +36,7 @@ export default function InterviewPractice() {
   const [error, setError] = useState("");
   const [inCall, setInCall] = useState(false);
   const [canListen, setCanListen] = useState(false);
+  const [big, setBig] = useState(false);
   const recRef = useRef<Recognition | null>(null);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function InterviewPractice() {
       if (active) {
         recRef.current?.stop();
         speechSynthesis.cancel();
+        setBig(false);
       }
     };
     window.addEventListener("lp-call-state", onCall);
@@ -143,9 +145,16 @@ export default function InterviewPractice() {
   }
 
   return (
-    <section className="card space-y-4">
-      <div className="text-center">
-        <h2 className="text-lg font-semibold">🎯 Interview practice</h2>
+    <section className={big
+      ? "fixed inset-0 z-50 overflow-y-auto bg-slate-950/95 px-4 py-6 backdrop-blur sm:px-8"
+      : "card space-y-4"}>
+      <div className={big ? "mx-auto max-w-3xl space-y-5" : "contents"}>
+      <div className="relative text-center">
+        <button type="button" className="btn-ghost absolute top-0 right-0 px-2 py-1 text-xs"
+          onClick={() => setBig((b) => !b)}>
+          {big ? "⤡ Smaller" : "⤢ Bigger"}
+        </button>
+        <h2 className={`font-semibold ${big ? "text-2xl" : "text-lg"}`}>🎯 Interview practice</h2>
         <p className="text-xs text-slate-400">
           Practise <b>before</b> your interview: the AI asks, you answer out loud, you get coaching.
         </p>
@@ -178,10 +187,11 @@ export default function InterviewPractice() {
             <span>Question {idx + 1} of {questions.length}</span>
             <button type="button" className="text-sky-300 hover:underline" onClick={() => ask()}>🔊 Repeat</button>
           </div>
-          <p className="rounded-xl bg-black/30 p-4 text-base font-medium leading-relaxed">{question}</p>
+          <p className={`rounded-xl bg-black/30 p-4 font-medium leading-relaxed ${big ? "text-2xl" : "text-lg"}`}>{question}</p>
 
           <div className="space-y-2">
-            <textarea className="input min-h-24 text-sm" value={answer + (interim ? ` ${interim}` : "")}
+            <textarea className={`input leading-relaxed ${big ? "min-h-64 text-xl" : "min-h-44 text-base"}`}
+              value={answer + (interim ? ` ${interim}` : "")}
               onChange={(e) => setAnswer(e.target.value)} readOnly={listening}
               placeholder={canListen ? "Press 🎙 and answer out loud (or type)" : "Type your answer"} />
             <div className="grid grid-cols-2 gap-2">
@@ -202,7 +212,7 @@ export default function InterviewPractice() {
           </div>
 
           {feedback && (
-            <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.04] p-4 text-sm">
+            <div className={`space-y-3 rounded-xl border border-white/10 bg-white/[0.04] p-4 leading-relaxed ${big ? "text-lg" : "text-base"}`}>
               <p className="text-center text-2xl font-bold">
                 {feedback.score}<span className="text-sm text-slate-400">/10</span>
               </p>
@@ -228,6 +238,7 @@ export default function InterviewPractice() {
       )}
 
       {error && <p className="text-center text-sm text-red-300">{error}</p>}
+      </div>
     </section>
   );
 }
