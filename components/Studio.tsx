@@ -15,8 +15,10 @@ import {
 import Presenter from "./Presenter";
 import VoiceCloner, { type ClonedVoice } from "./VoiceCloner";
 import ChatPanel, { type ChatMsg } from "./ChatPanel";
+import Recorder from "./Recorder";
+import InstallButton from "./InstallButton";
 
-type Step = "form" | "edit" | "present";
+type Step = "form" | "edit" | "present" | "record";
 const STORE_KEY = "lp-state-v1";
 
 export default function Studio() {
@@ -234,6 +236,10 @@ export default function Studio() {
     }
   }, [allDone]);
 
+  if (step === "record" && deck) {
+    return <Recorder deck={deck} onExit={() => setStep("edit")} />;
+  }
+
   if (step === "present" && deck) {
     return (
       <Presenter
@@ -257,9 +263,12 @@ export default function Studio() {
             Title + prompt + your photo → slides, speech, and a talking video of you.
           </p>
         </div>
-        {step === "edit" && (
-          <button onClick={reset} className="btn-ghost">New presentation</button>
-        )}
+        <div className="flex items-center gap-2">
+          {step === "edit" && (
+            <button onClick={reset} className="btn-ghost whitespace-nowrap">New</button>
+          )}
+          <InstallButton />
+        </div>
       </header>
 
       {error && (
@@ -335,6 +344,9 @@ export default function Studio() {
                 </button>
                 <button onClick={() => { setLiveMode(false); setStep("present"); }} className="btn-secondary">
                   Slides only
+                </button>
+                <button onClick={() => setStep("record")} className="btn-secondary">
+                  📱 Record myself (teleprompter)
                 </button>
               </div>
               <div className="flex flex-wrap gap-2 border-t border-white/10 pt-4">
@@ -430,7 +442,7 @@ function PhotoAndVoice({
   return (
     <aside className="card space-y-4">
       <span className="label">Your photo</span>
-      <label className="relative flex aspect-[4/5] cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/20 bg-black/30 hover:border-sky-400">
+      <label className="relative mx-auto flex aspect-[4/5] w-full max-w-56 cursor-pointer md:max-w-none items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/20 bg-black/30 hover:border-sky-400">
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={photo} alt="Presenter" className="h-full w-full object-cover" />
@@ -440,6 +452,11 @@ function PhotoAndVoice({
           </span>
         )}
         <input type="file" accept="image/*" className="sr-only" onChange={(e) => onPhoto(e.target.files?.[0])} />
+      </label>
+      <label className="btn-ghost block cursor-pointer text-center text-sm">
+        📷 Take photo with camera
+        <input type="file" accept="image/*" capture="user" className="sr-only"
+          onChange={(e) => onPhoto(e.target.files?.[0])} />
       </label>
       <p className="text-xs text-slate-400">
         Best results: face centred, looking at the camera, good light, neutral background, mouth closed.

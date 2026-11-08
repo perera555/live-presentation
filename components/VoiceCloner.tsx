@@ -145,9 +145,9 @@ export default function VoiceCloner({
           ) : (
             <button type="button" className="btn-secondary flex-1" onClick={start}>● Record</button>
           )}
-          <label className="btn-ghost cursor-pointer text-xs">
-            Upload
-            <input type="file" accept="audio/*" className="sr-only"
+          <label className="btn-ghost cursor-pointer text-xs" title="Audio file, or a phone video of you talking">
+            Upload audio / video
+            <input type="file" accept="audio/*,video/*" className="sr-only"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSeconds(0); takeSample(f); } }} />
           </label>
         </div>

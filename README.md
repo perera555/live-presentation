@@ -10,6 +10,8 @@ Type a presentation **title** and a **prompt**, upload **your photo**, and optio
 
 You can also edit the presentation **by chatting** with the AI, like ChatGPT ("add a slide about costs", "make it more formal").
 
+**📱 Record myself (teleprompter)**: if your university asks you to record the presentation on your phone, this records you with the front camera while your speech scrolls on screen. Then tap **Save video** to keep it in Photos or your Gallery.
+
 **Create & go live** does everything in one click: prompt → slides → talking video → live presentation.
 
 ## Setup
